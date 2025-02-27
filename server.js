@@ -369,6 +369,27 @@ app.put("/customers", async (req, res) => {
   }
 });
 
+// DELETE: Xóa khách hàng theo ID
+app.delete("/customers/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!id) {
+      return res.status(400).json({ error: "Missing customer ID" });
+    }
+
+    const result = await sequelize.query(
+      `DELETE FROM "Customer" WHERE id = :id`,
+      { replacements: { id }, type: QueryTypes.DELETE }
+    );
+
+    return res.json({ message: "Customer deleted successfully" });
+  } catch (err) {
+    console.error("Error deleting customer:", err.stack);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 //
 
 /**
