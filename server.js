@@ -244,6 +244,78 @@ app.get("/customers", async (req, res) => {
   }
 });
 
+// PUT: Cập nhật khách hàng
+app.put("/customers/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      full_name,
+      year_of_birth,
+      phone_number,
+      note,
+      role_note,
+      status,
+      team_id,
+      updated_by,
+    } = req.body;
+
+    if (!id) {
+      return res.status(400).json({ error: "Customer ID is required" });
+    }
+
+    if (!updated_by) {
+      return res.status(400).json({ error: "Updated by is required" });
+    }
+
+    // Kiểm tra khách hàng có tồn tại không
+    const existingCustomer = await sequelize.query(
+      `SELECT * FROM "Customer" WHERE id = :id LIMIT 1`,
+      {
+        replacements: { id },
+        type: sequelize.QueryTypes.SELECT,
+      }
+    );
+
+    if (existingCustomer.length === 0) {
+      return res.status(404).json({ error: "Customer not found" });
+    }
+
+    // Cập nhật thông tin khách hàng
+    await sequelize.query(
+      `UPDATE "Customer" 
+       SET full_name = :full_name, 
+           year_of_birth = :year_of_birth, 
+           phone_number = :phone_number, 
+           note = :note, 
+           role_note = :role_note, 
+           status = :status, 
+           team_id = :team_id, 
+           updated_by = :updated_by, 
+           updated_at = NOW()
+       WHERE id = :id`,
+      {
+        replacements: {
+          id,
+          full_name,
+          year_of_birth,
+          phone_number,
+          note,
+          role_note,
+          status,
+          team_id,
+          updated_by,
+        },
+        type: sequelize.QueryTypes.UPDATE,
+      }
+    );
+
+    return res.json({ message: "Customer updated successfully" });
+  } catch (error) {
+    console.error("Error updating customer:", error);
+    return res.status(500).json({ error: "Failed to update customer" });
+  }
+});
+
 // POST: Tạo khách hàng mới
 app.post("/customers", async (req, res) => {
   try {
@@ -413,8 +485,8 @@ app.get("/employees", async (req, res) => {
         FROM "User" u
         LEFT JOIN "User" c ON u.created_by = c.id
         LEFT JOIN "User" u2 ON u.updated_by = u2.id
-        ORDER BY u.id ASC
         WHERE u.is_admin = false
+        ORDER BY u.id ASC
         LIMIT :limit OFFSET :offset
       )
       SELECT CAST((SELECT COUNT(*) FROM "User") AS INTEGER) AS total, 
