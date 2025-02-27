@@ -594,7 +594,7 @@ app.get("/teams", async (req, res) => {
         FROM "Team" t
         LEFT JOIN "User" u ON t.created_by = u.id
         LEFT JOIN "User" u2 ON t.updated_by = u2.id
-        ORDER BY t.id
+        ORDER BY t.id ASC
         `,
         { type: sequelize.QueryTypes.SELECT }
       );
