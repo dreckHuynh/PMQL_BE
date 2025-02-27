@@ -59,6 +59,7 @@ app.post("/auth/login", async (req, res) => {
     return res.json({
       message: "Logged in successfully",
       data: {
+        token,
         is_first_login: existingUser.is_first_login,
       },
     });
