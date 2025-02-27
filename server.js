@@ -411,6 +411,7 @@ app.get("/employees", async (req, res) => {
         FROM "User" u
         LEFT JOIN "User" c ON u.created_by = c.id
         LEFT JOIN "User" u2 ON u.updated_by = u2.id
+        ORDER BY u.id ASC
         WHERE u.is_admin = false
         LIMIT :limit OFFSET :offset
       )
@@ -593,6 +594,7 @@ app.get("/teams", async (req, res) => {
         FROM "Team" t
         LEFT JOIN "User" u ON t.created_by = u.id
         LEFT JOIN "User" u2 ON t.updated_by = u2.id
+        ORDER BY t.id
         `,
         { type: sequelize.QueryTypes.SELECT }
       );
