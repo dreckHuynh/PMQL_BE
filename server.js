@@ -3,7 +3,7 @@ const cors = require("cors");
 const bodyParser = require("body-parser");
 const { connectDB, sequelize } = require("./config/database");
 const bcrypt = require("bcryptjs");
-const { QueryTypes } = require("sequelize");
+const jwt = require("jsonwebtoken");
 
 require("dotenv").config();
 
@@ -63,6 +63,7 @@ app.post("/auth/login", async (req, res) => {
       },
     });
   } catch (error) {
+    console.log(error);
     return res.status(500).json({ error: "Login failed" });
   }
 });
