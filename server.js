@@ -135,6 +135,64 @@ app.put("/auth/update-password", async (req, res) => {
   }
 });
 
+app.post("/auth/update-password", async (req, res) => {
+  try {
+    const { username, password, newPassword } = req.body;
+
+    // Tìm user trong database bằng raw query
+    const user = await sequelize.query(
+      `SELECT * FROM "User" WHERE username = :username LIMIT 1;`,
+      {
+        replacements: { username },
+        type: sequelize.QueryTypes.SELECT,
+      }
+    );
+
+    if (!user || user.length === 0) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const existingUser = user[0];
+
+    // Hash mật khẩu mới
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const newHashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Cập nhật mật khẩu trong database
+    await sequelize.query(
+      `UPDATE "User" SET password = :newHashedPassword, is_first_login = false WHERE username = :username And password = :hashedPassword;`,
+      {
+        replacements: { newHashedPassword, hashedPassword, username },
+        type: sequelize.QueryTypes.UPDATE,
+      }
+    );
+
+    const token = jwt.sign(
+      {
+        ...existingUser,
+        id: existingUser.id.toString(),
+        updated_by: existingUser.updated_by?.toString(),
+        created_by: existingUser.created_by?.toString(),
+      },
+      process.env.JWT_SECRET || "your_secret_key",
+      { expiresIn: "24h" }
+    );
+
+    // Cập nhật cookie mới
+    res.cookie("token", token, {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      path: "/",
+    });
+
+    return res.json({ message: "Password updated successfully" });
+  } catch (err) {
+    console.error("Error updating password:", err);
+    return res.status(500).json({ error: "Failed to update password" });
+  }
+});
+
 // Customer
 
 // GET: Lấy danh sách khách hàng (phân trang)
