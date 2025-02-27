@@ -1,9 +1,10 @@
-require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const { connectDB, sequelize } = require("./config/database");
 const bcrypt = require("bcryptjs");
+
+require("dotenv").config();
 
 const app = express();
 app.use(cors());
@@ -251,7 +252,6 @@ app.post("/customers", async (req, res) => {
       role_note,
       status,
       team_id,
-      created_by,
       updated_by,
     } = req.body;
 
@@ -277,11 +277,11 @@ app.post("/customers", async (req, res) => {
       `
       INSERT INTO "Customer" (
         full_name, year_of_birth, phone_number, note, role_note, 
-        status, team_id, created_by, updated_by, updated_at
+        status, team_id, created_by, created_at, updated_by, updated_at
       ) 
       VALUES (
         :full_name, :year_of_birth, :phone_number, :note, :role_note,
-        :status, :team_id, :created_by, :updated_by, NOW()
+        :status, :team_id, :updated_by, NOW(), :updated_by, NOW()
       )
       `,
       {
@@ -293,7 +293,6 @@ app.post("/customers", async (req, res) => {
           role_note,
           status,
           team_id,
-          created_by,
           updated_by,
         },
         type: sequelize.QueryTypes.INSERT,
