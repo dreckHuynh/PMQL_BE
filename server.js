@@ -381,7 +381,7 @@ app.delete("/customers/:id", async (req, res) => {
 
     const result = await sequelize.query(
       `DELETE FROM "Customer" WHERE id = :id`,
-      { replacements: { id }, type: QueryTypes.DELETE }
+      { replacements: { id }, type: sequelize.QueryTypes.DELETE }
     );
 
     return res.json({ message: "Customer deleted successfully" });
