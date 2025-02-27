@@ -3,6 +3,7 @@ const cors = require("cors");
 const bodyParser = require("body-parser");
 const { connectDB, sequelize } = require("./config/database");
 const bcrypt = require("bcryptjs");
+const { QueryTypes } = require("sequelize");
 
 require("dotenv").config();
 
