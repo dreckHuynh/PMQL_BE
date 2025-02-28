@@ -483,10 +483,10 @@ app.put("/users", async (req, res) => {
     }
 
     // Lấy trạng thái hiện tại của khách hàng
-    const userById = await sequelize.query(
-      `SELECT username FROM "User" WHERE id = :id`,
+    const [userById] = await sequelize.query(
+      `SELECT username FROM "User" WHERE id = :id LIMIT 1`,
       {
-        replacements: { id },
+        replacements: { id: Number(id) },
         type: sequelize.QueryTypes.SELECT,
       }
     );
@@ -509,8 +509,8 @@ app.put("/users", async (req, res) => {
       message: "User reset password successfully",
     });
   } catch (err) {
-    console.error("Error creating user:", err);
-    res.status(500).json({ error: "Failed to create user" });
+    console.error("Error reset user:", err);
+    res.status(500).json({ error: "Failed to reset user" });
   }
 });
 
