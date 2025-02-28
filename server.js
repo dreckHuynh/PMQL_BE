@@ -684,11 +684,13 @@ app.get("/statistical", async (req, res) => {
       replacements,
     });
 
-    const formattedCallCounts = callCounts.map((entry) => ({
-      ...entry,
-      caller: ROLE_NOTE.find((item) => item.key === entry.caller)?.value,
-      call_count: Number(entry.call_count), // Fix BigInt serialization
-    }));
+    const formattedCallCounts = callCounts.map(
+      ({ caller, call_count, ...rest }) => ({
+        ...rest,
+        caller: ROLE_NOTE.find(({ key }) => key === caller)?.label || caller,
+        call_count: Number(call_count), // Đảm bảo chuyển đổi số
+      })
+    );
 
     res.json({ data: formattedCallCounts });
   } catch (err) {
