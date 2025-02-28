@@ -242,7 +242,17 @@ app.get("/customers", async (req, res) => {
       WITH customer_data AS (
         SELECT c.*, 
               u.username AS created_by,
-              u2.username AS updated_by
+              u2.username AS updated_by,
+              CASE 
+                WHEN u.is_admin = true THEN 'Quản lý'
+                WHEN u.is_team_lead = true THEN 'Tổ trưởng'
+                ELSE 'Nhân viên'
+              END AS created_by,
+              CASE 
+                WHEN u2.is_admin = true THEN 'Quản lý'
+                WHEN u2.is_team_lead = true THEN 'Tổ trưởng'
+                ELSE 'Nhân viên'
+              END AS updated_by
         FROM "Customer" c
         LEFT JOIN "User" u ON c.created_by = u.id
         LEFT JOIN "User" u2 ON c.updated_by = u2.id
