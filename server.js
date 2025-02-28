@@ -690,7 +690,7 @@ app.get("/teams", async (req, res) => {
       FROM "Team" t
       LEFT JOIN "User" u ON t.created_by = u.id
       LEFT JOIN "User" u2 ON t.updated_by = u2.id
-      ORDER BY t.id ASC
+      ORDER BY t.id ASC, t.team_name ASC
       LIMIT :limitNum OFFSET :offset
       `,
       {
