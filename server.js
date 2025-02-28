@@ -252,10 +252,12 @@ app.get("/customers", async (req, res) => {
                 WHEN u2.is_admin = true THEN 'Quản lý'
                 WHEN u2.is_team_lead = true THEN 'Tổ trưởng'
                 ELSE 'Nhân viên'
-              END AS updated_by
+              END AS updated_by,
+              t.team_name
         FROM "Customer" c
         LEFT JOIN "User" u ON c.created_by = u.id
         LEFT JOIN "User" u2 ON c.updated_by = u2.id
+        LEFT JOIN "Team" t ON t.id = u.team_id
         ${searchCondition}
         ORDER BY c.created_by DESC
         LIMIT :limit OFFSET :offset
