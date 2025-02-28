@@ -631,7 +631,7 @@ app.post("/employees", async (req, res) => {
  * PUT /api/employees
  * Reset mật khẩu nhân viên
  */
-app.put("/employees", async (req, res) => {
+app.put("/employees/reset", async (req, res) => {
   try {
     const { id } = req.body;
     if (!id) {
@@ -657,7 +657,96 @@ app.put("/employees", async (req, res) => {
     res.status(500).json({ error: "Failed to reset password" });
   }
 });
+/**
+ * PUT /api/employees/:id
+ * Cập nhật thông tin nhân viên (Chỉ admin hoặc chính nhân viên mới có quyền)
+ */
+app.put("/employees", extractUserId, async (req, res) => {
+  try {
+    const { id, name, username, password, team_id, status, is_first_login } =
+      req.body;
+    const userId = req.userId;
 
+    // Kiểm tra ID hợp lệ
+    if (!id || isNaN(id)) {
+      return res.status(400).json({ error: "Invalid User ID" });
+    }
+
+    // Kiểm tra user có tồn tại không
+    const userCheckQuery = `SELECT id, is_admin FROM "User" WHERE id = :id`;
+    const userCheck = await sequelize.query(userCheckQuery, {
+      replacements: { id },
+      type: sequelize.QueryTypes.SELECT,
+    });
+
+    if (!userCheck.length) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Kiểm tra quyền hạn: Chỉ admin hoặc chính nhân viên mới có thể chỉnh sửa
+    const adminCheckQuery = `SELECT is_admin, is_team_lead FROM "User" WHERE id = :userId`;
+    const adminCheck = await sequelize.query(adminCheckQuery, {
+      replacements: { userId },
+      type: sequelize.QueryTypes.SELECT,
+    });
+
+    const isAdmin = adminCheck[0]?.is_admin;
+    const isTeamLead = adminCheck[0]?.is_team_lead;
+
+    if (!isAdmin && !isTeamLead && parseInt(userId) !== parseInt(id)) {
+      return res
+        .status(403)
+        .json({ error: "You are not authorized to update this user" });
+    }
+
+    // Xây dựng câu lệnh UPDATE động dựa trên các trường được gửi
+    let updateFields = [];
+    let replacements = { id, updated_by: userId };
+
+    if (name) {
+      updateFields.push(`name = :name`);
+      replacements.name = name;
+    }
+    if (username) {
+      updateFields.push(`username = :username`);
+      replacements.username = username;
+    }
+    if (password) {
+      updateFields.push(`password = :password`);
+      replacements.password = password;
+    }
+    if (team_id) {
+      updateFields.push(`team_id = :team_id`);
+      replacements.team_id = team_id;
+    }
+    if (status) {
+      updateFields.push(`status = :status`);
+      replacements.status = status;
+    }
+    if (is_first_login) {
+      updateFields.push(`is_first_login = :is_first_login`);
+      replacements.is_first_login = is_first_login;
+    }
+    if (updateFields.length === 0) {
+      return res.status(400).json({ error: "No valid fields to update" });
+    }
+
+    const updateQuery = `
+      UPDATE "User"
+      SET ${updateFields.join(
+        ", "
+      )}, updated_at = NOW(), updated_by = :updated_by
+      WHERE id = :id
+    `;
+
+    await sequelize.query(updateQuery, { replacements });
+
+    res.json({ message: "User updated successfully", updated_by: userId });
+  } catch (error) {
+    console.error("Error updating user:", error);
+    res.status(500).json({ error: "Failed to update user" });
+  }
+});
 //
 
 /**
