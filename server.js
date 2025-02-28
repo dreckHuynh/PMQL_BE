@@ -12,6 +12,28 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
+// Middleware lấy userId từ token
+const extractUserId = (req, res, next) => {
+  const authHeader = req.headers["authorization"];
+  const token = authHeader && authHeader.split(" ")[1];
+
+  if (!token) {
+    return res.status(401).json({ error: "Unauthorized: No token provided" });
+  }
+
+  jwt.verify(
+    token,
+    process.env.JWT_SECRET || "your_secret_key",
+    (err, decoded) => {
+      if (err) {
+        return res.status(403).json({ error: "Forbidden: Invalid token" });
+      }
+      req.userId = decoded.id;
+      next();
+    }
+  );
+};
+
 // API Đăng nhập
 app.post("/auth/login", async (req, res) => {
   try {
@@ -800,27 +822,6 @@ app.get("/statistical", async (req, res) => {
 
 //
 
-// Middleware lấy userId từ token
-const extractUserId = (req, res, next) => {
-  const authHeader = req.headers["authorization"];
-  const token = authHeader && authHeader.split(" ")[1];
-
-  if (!token) {
-    return res.status(401).json({ error: "Unauthorized: No token provided" });
-  }
-
-  jwt.verify(
-    token,
-    process.env.JWT_SECRET || "your_secret_key",
-    (err, decoded) => {
-      if (err) {
-        return res.status(403).json({ error: "Forbidden: Invalid token" });
-      }
-      req.userId = decoded.id;
-      next();
-    }
-  );
-};
 /**
  * GET /api/teams
  * Lấy danh sách team của user (có hỗ trợ phân trang)
