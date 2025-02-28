@@ -4,10 +4,10 @@ export const USER_ROLE = {
 };
 
 export const ROLE_NOTE = [
-  { key: 0, label: "CV" },
-  { key: 1, label: "APP" },
-  { key: 2, label: "DD" },
-  { key: 3, label: "AD" },
+  { key: "0", label: "CV" },
+  { key: "1", label: "APP" },
+  { key: "2", label: "DD" },
+  { key: "3", label: "AD" },
 ];
 
 export const CUSTOMER_STATUS = [
