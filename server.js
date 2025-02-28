@@ -664,7 +664,7 @@ app.get("/statistical", async (req, res) => {
     const replacements = {};
 
     if (normalizedRoleNote) {
-      whereClause = `WHERE c.role_note = :role_note`;
+      whereClause = `AND c.role_note = :role_note`;
       replacements.role_note = ROLE_NOTE.find(
         (item) => item.label === normalizedRoleNote
       )?.key;
@@ -674,6 +674,7 @@ app.get("/statistical", async (req, res) => {
       SELECT COUNT(1) AS call_count, c.role_note AS caller, t.team_name
       FROM "Customer" AS c
       INNER JOIN "Team" AS t ON c.team_id = t.id
+      WHERE c.status = '2'
       ${whereClause}
       GROUP BY c.team_id, c.role_note, t.team_name
       ORDER BY call_count DESC;
