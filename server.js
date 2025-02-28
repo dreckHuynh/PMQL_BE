@@ -902,16 +902,20 @@ app.get("/teams", extractUserId, async (req, res) => {
     // Query để lấy danh sách team mà user thuộc về
     const teamsQuery = `
       WITH user_team AS (
-        SELECT team_id FROM "User" WHERE id = :userId
+          SELECT team_id, is_admin 
+          FROM "User" 
+          WHERE id = :userId
       )
       SELECT t.*, 
-             u.username AS created_by, 
-             u2.username AS updated_by
+            u.username AS created_by, 
+            u2.username AS updated_by
       FROM "Team" t
-      INNER JOIN user_team ut ON t.id = ut.team_id
+      INNER JOIN user_team ut 
+      ON (ut.is_admin = true OR t.id = ut.team_id) 
+
       LEFT JOIN "User" u ON t.created_by = u.id
       LEFT JOIN "User" u2 ON t.updated_by = u2.id
-      ORDER BY t.id ASC, t.team_name ASC
+      ORDER BY t.team_name ASC, t.id ASC
       ${page && limit ? "LIMIT :limitNum OFFSET :offset" : ""}
     `;
 
