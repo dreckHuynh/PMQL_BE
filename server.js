@@ -412,11 +412,21 @@ app.post("/customers", async (req, res) => {
     return res.status(500).json({ error: "Failed to create customer" });
   }
 });
-
 // PUT: Cập nhật trạng thái khách hàng
-app.put("/customers", async (req, res) => {
+app.put("/customers", extractUserId, async (req, res) => {
   try {
-    const { id, status, is_admin, updated_by } = req.body;
+    const {
+      full_name,
+      year_of_birth,
+      phone_number,
+      note,
+      role_note,
+      status,
+      team_id,
+      updated_by,
+      id,
+    } = req.body;
+    const userId = req.userId;
 
     if (!id || status === undefined || !updated_by) {
       return res.status(400).json({ error: "Missing required fields" });
@@ -431,6 +441,20 @@ app.put("/customers", async (req, res) => {
         .json({ error: "Invalid updated_by or status value" });
     }
 
+    // Lấy quyền hạn của user
+    const userQuery = `SELECT is_admin, is_team_lead FROM "User" WHERE id = :userId`;
+    const userResult = await sequelize.query(userQuery, {
+      replacements: { userId },
+      type: sequelize.QueryTypes.SELECT,
+    });
+
+    if (!userResult.length) {
+      return res.status(403).json({ error: "Unauthorized" });
+    }
+
+    const isAdmin = userResult[0].is_admin;
+    const isTeamLead = userResult[0].is_team_lead;
+
     // Lấy trạng thái hiện tại của khách hàng
     const currentStatusResult = await sequelize.query(
       `SELECT status FROM "Customer" WHERE id = :id`,
@@ -444,32 +468,71 @@ app.put("/customers", async (req, res) => {
       return res.status(404).json({ error: "Customer not found" });
     }
 
-    const currentStatus = currentStatusResult[0].status;
+    const currentStatus = parseInt(currentStatusResult[0].status, 10);
 
-    if (currentStatus === "2") {
+    // Nếu trạng thái hiện tại là 2, không cần updated_by
+    if (currentStatus === 2) {
       updatedByInt = null;
     }
 
-    // Kiểm tra điều kiện cập nhật trạng thái
-    if (
-      (currentStatus === "0" && (status === "1" || status === "2")) || // 0 → 1 hoặc 0 → 2
-      (currentStatus === "1" && status === "2") || // 1 → 2
-      (currentStatus === "2" && status === "1" && is_admin) // 2 → 1 (Chỉ admin)
-    ) {
-      await sequelize.query(
-        `UPDATE "Customer" 
-         SET status = :status, updated_by = :updatedByInt, updated_at = NOW() 
-         WHERE id = :id`,
-        {
-          replacements: { status, updatedByInt, id },
-          type: sequelize.QueryTypes.UPDATE,
-        }
-      );
-
-      return res.json({ message: "Status updated successfully" });
+    // Kiểm tra quyền cập nhật trạng thái
+    if (!isAdmin && !isTeamLead && currentStatus === 2) {
+      return res
+        .status(403)
+        .json({ error: "Only Admin or Team Lead can update when status is 2" });
     }
 
-    return res.status(400).json({ error: "Invalid status transition" });
+    // Kiểm tra điều kiện cập nhật trạng thái hợp lệ
+    const validTransitions = {
+      0: [1, 2], // 0 → 1 hoặc 0 → 2
+      1: [2], // 1 → 2
+      2: [1], // 2 → 1 (chỉ Admin hoặc Team Lead)
+    };
+
+    console.log(currentStatus);
+
+    console.log(statusInt);
+
+    if (currentStatus === 2 && statusInt === 1 && !isAdmin && !isTeamLead) {
+      return res
+        .status(403)
+        .json({ error: "Only Admin or Team Lead can reactivate a customer" });
+    }
+
+    // if (!validTransitions[currentStatus]?.includes(statusInt)) {
+    //   return res.status(400).json({ error: "Invalid status transition" });
+    // }
+
+    // Cập nhật trạng thái khách hàng
+    await sequelize.query(
+      `UPDATE "Customer" 
+       SET 
+       full_name =:full_name
+       , year_of_birth = :year_of_birth
+       , note = :note
+       , role_note = :role_note
+       , team_id = :team_id
+       , status = :status
+       , updated_by = :updatedByInt
+       , updated_at = NOW() 
+       WHERE id = :id`,
+      {
+        replacements: {
+          full_name,
+          year_of_birth,
+          phone_number,
+          note,
+          role_note,
+          status,
+          team_id,
+          updatedByInt,
+          id,
+        },
+        type: sequelize.QueryTypes.UPDATE,
+      }
+    );
+
+    return res.json({ message: "Status updated successfully" });
   } catch (err) {
     console.error("Error updating status:", err.stack);
     return res.status(500).json({ error: "Error updating status" });
