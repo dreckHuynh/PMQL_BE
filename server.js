@@ -4,6 +4,7 @@ const bodyParser = require("body-parser");
 const { connectDB, sequelize } = require("./config/database");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const { ROLE_NOTE } = require("./enums");
 
 require("dotenv").config();
 
@@ -664,7 +665,9 @@ app.get("/statistical", async (req, res) => {
 
     if (normalizedRoleNote) {
       whereClause = `WHERE c.role_note = :role_note`;
-      replacements.role_note = normalizedRoleNote;
+      replacements.role_note = ROLE_NOTE.find(
+        (item) => item.label === label
+      )?.key;
     }
 
     const query = `
