@@ -199,13 +199,21 @@ app.post("/auth/update-password", async (req, res) => {
 });
 
 // Customer
-
 // GET: Lấy danh sách khách hàng (phân trang)
 app.get("/customers", async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
+    const search = req.query.search ? `%${req.query.search}%` : null;
     const offset = (page - 1) * limit;
+
+    const replacements = { limit, offset };
+    let searchCondition = "";
+
+    if (search) {
+      searchCondition = `WHERE c.full_name ILIKE :search OR c.phone_number ILIKE :search`;
+      replacements.search = search;
+    }
 
     const result = await sequelize.query(
       `
@@ -216,6 +224,7 @@ app.get("/customers", async (req, res) => {
         FROM "Customer" c
         LEFT JOIN "User" u ON c.created_by = u.id
         LEFT JOIN "User" u2 ON c.updated_by = u2.id
+        ${searchCondition}
         ORDER BY c.id ASC
         LIMIT :limit OFFSET :offset
       )
@@ -224,7 +233,7 @@ app.get("/customers", async (req, res) => {
       FROM customer_data;
       `,
       {
-        replacements: { limit, offset },
+        replacements,
         type: sequelize.QueryTypes.SELECT,
       }
     );
@@ -232,7 +241,7 @@ app.get("/customers", async (req, res) => {
     const { total, customers } = result[0] || { total: 0, customers: [] };
 
     return res.json({
-      data: customers,
+      data: customers || [],
       total,
       page,
       totalPages: Math.ceil(total / limit),
@@ -241,7 +250,7 @@ app.get("/customers", async (req, res) => {
     console.error("Error fetching customers:", err);
     return res
       .status(500)
-      .json({ error: "Error fetching customers", details: err });
+      .json({ error: "Error fetching customers", details: err.message });
   }
 });
 
@@ -702,70 +711,80 @@ app.get("/statistical", async (req, res) => {
 
 //
 
+// Middleware lấy userId từ token
+const extractUserId = (req, res, next) => {
+  const authHeader = req.headers["authorization"];
+  const token = authHeader && authHeader.split(" ")[1];
+
+  if (!token) {
+    return res.status(401).json({ error: "Unauthorized: No token provided" });
+  }
+
+  jwt.verify(
+    token,
+    process.env.JWT_SECRET || "your_secret_key",
+    (err, decoded) => {
+      if (err) {
+        return res.status(403).json({ error: "Forbidden: Invalid token" });
+      }
+      req.userId = decoded.id;
+      next();
+    }
+  );
+};
 /**
- * GET /api/team
- * Lấy danh sách các team (có hỗ trợ phân trang)
+ * GET /api/teams
+ * Lấy danh sách team của user (có hỗ trợ phân trang)
  */
-app.get("/teams", async (req, res) => {
+app.get("/teams", extractUserId, async (req, res) => {
   try {
     const { page, limit } = req.query;
     const pageNum = parseInt(page, 10) || 1;
     const limitNum = parseInt(limit, 10) || 10;
     const offset = (pageNum - 1) * limitNum;
+    const userId = req.userId; // Lấy id user từ token
 
-    if (!page || !limit) {
-      // Lấy tất cả teams không phân trang
-      const allTeams = await sequelize.query(
-        `
-        SELECT t.*, 
-               u.username AS created_by, 
-               u2.username AS updated_by
-        FROM "Team" t
-        LEFT JOIN "User" u ON t.created_by = u.id
-        LEFT JOIN "User" u2 ON t.updated_by = u2.id
-        ORDER BY t.id ASC
-        `,
-        { type: sequelize.QueryTypes.SELECT }
-      );
+    console.log(`User ID from token: ${userId}`); // Debug log
 
-      return res.json({
-        data: allTeams,
-        total: allTeams.length,
-        page: 1,
-        totalPages: 1,
-      });
-    }
-
-    // Lấy teams có phân trang
-    const teams = await sequelize.query(
-      `
+    // Query để lấy danh sách team mà user thuộc về
+    const teamsQuery = `
+      WITH user_team AS (
+        SELECT team_id FROM "User" WHERE id = :userId
+      )
       SELECT t.*, 
              u.username AS created_by, 
              u2.username AS updated_by
       FROM "Team" t
+      INNER JOIN user_team ut ON t.id = ut.team_id
       LEFT JOIN "User" u ON t.created_by = u.id
       LEFT JOIN "User" u2 ON t.updated_by = u2.id
       ORDER BY t.id ASC, t.team_name ASC
-      LIMIT :limitNum OFFSET :offset
-      `,
-      {
-        type: sequelize.QueryTypes.SELECT,
-        replacements: { limitNum, offset },
-      }
-    );
+      ${page && limit ? "LIMIT :limitNum OFFSET :offset" : ""}
+    `;
 
-    // Đếm tổng số teams
-    const countResult = await sequelize.query(
-      `SELECT COUNT(*)::int AS total FROM "Team"`,
-      { type: sequelize.QueryTypes.SELECT }
-    );
-    const total = countResult[0].total;
+    const teams = await sequelize.query(teamsQuery, {
+      type: sequelize.QueryTypes.SELECT,
+      replacements: { userId, limitNum, offset },
+    });
+
+    // Đếm tổng số teams của user
+    const countQuery = `
+      SELECT COUNT(*)::int AS total 
+      FROM "Team" t
+      INNER JOIN (SELECT team_id FROM "User" WHERE id = :userId) ut ON t.id = ut.team_id
+    `;
+
+    const countResult = await sequelize.query(countQuery, {
+      type: sequelize.QueryTypes.SELECT,
+      replacements: { userId },
+    });
+    const total = countResult[0]?.total || 0;
 
     return res.json({
       data: teams,
       total,
       page: pageNum,
-      totalPages: Math.ceil(total / limitNum),
+      totalPages: limit ? Math.ceil(total / limitNum) : 1,
     });
   } catch (err) {
     console.error("Error fetching teams:", err);
