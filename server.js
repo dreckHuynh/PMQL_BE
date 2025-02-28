@@ -686,7 +686,7 @@ app.get("/statistical", async (req, res) => {
 
     const formattedCallCounts = callCounts.map((entry) => ({
       ...entry,
-      role_note: ROLE_NOTE.find((item) => item.key === entry.caller)?.value,
+      caller: ROLE_NOTE.find((item) => item.key === entry.caller)?.value,
       call_count: Number(entry.call_count), // Fix BigInt serialization
     }));
 
