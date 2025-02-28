@@ -468,6 +468,54 @@ app.delete("/customers/:id", async (req, res) => {
 //
 
 /**
+ * PUT /api/users
+ * Tạo nhân viên mới
+ */
+app.put("/users", async (req, res) => {
+  try {
+    const { id } = req.body;
+
+    if (!id) {
+      return res
+        .status(400)
+        .json({ error: "Username, name, and team_id are required" });
+    }
+
+    // Lấy trạng thái hiện tại của khách hàng
+    const userById = await sequelize.query(
+      `SELECT username FROM "User" WHERE id = :id`,
+      {
+        replacements: { id },
+        type: sequelize.QueryTypes.SELECT,
+      }
+    );
+    const username = userById.username;
+    const hashedPassword = await bcrypt.hash(username, 10);
+    const query = `
+      UPDATE "User"
+      SET password = :password  
+      WHERE username = :username;
+    `;
+
+    await sequelize.query(query, {
+      replacements: {
+        username,
+        password: hashedPassword,
+      },
+    });
+
+    res.status(201).json({
+      message: "User reset password successfully",
+    });
+  } catch (err) {
+    console.error("Error creating user:", err);
+    res.status(500).json({ error: "Failed to create user" });
+  }
+});
+
+//
+
+/**
  * GET /api/employees
  * Lấy danh sách nhân viên với phân trang
  */
