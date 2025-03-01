@@ -257,7 +257,7 @@ app.get("/customers", async (req, res) => {
         FROM "Customer" c
         LEFT JOIN "User" u ON c.created_by = u.id
         LEFT JOIN "User" u2 ON c.updated_by = u2.id
-        LEFT JOIN "Team" t ON t.id = u.team_id OR t.id = u2.team_id
+        LEFT JOIN "Team" t ON t.id = c.team_id
         ${searchCondition}
         ORDER BY c.created_by DESC
         LIMIT :limit OFFSET :offset
@@ -321,32 +321,35 @@ app.get("/customers/check", async (req, res) => {
     const result = await sequelize.query(
       `
       WITH customer_data AS (
-        SELECT c.*, 
-              u.username AS created_by,
-              u2.username AS updated_by,
-              CASE 
-                WHEN u.is_admin = true THEN 'Quản lý'
-                WHEN u.is_team_lead = true THEN 'Tổ trưởng'
-                ELSE 'Nhân viên'
-              END AS created_by,
-              CASE 
-                WHEN u2.is_admin = true THEN 'Quản lý'
-                WHEN u2.is_team_lead = true THEN 'Tổ trưởng'
-                ELSE 'Nhân viên'
-              END AS updated_by,
-              t.team_name
-        FROM "Customer" c
-        LEFT JOIN "User" u ON c.created_by = u.id
-        LEFT JOIN "User" u2 ON c.updated_by = u2.id
-        LEFT JOIN "Team" t ON t.id = u.team_id OR t.id = u2.team_id
-        WHERE c.updated_by is not null OR c.status = '2'
-        ${searchCondition}
-        ORDER BY c.created_by DESC
-        LIMIT :limit OFFSET :offset
-      )
-      SELECT CAST((SELECT COUNT(*) FROM "Customer") AS INTEGER) AS total, 
-            json_agg(customer_data) AS customers 
-      FROM customer_data;
+    SELECT c.*, 
+           u.username AS created_by,
+           CASE 
+               WHEN u.is_admin = true THEN 'Quản lý'
+               WHEN u.is_team_lead = true THEN 'Tổ trưởng'
+               ELSE 'Nhân viên'
+           END AS created_role,
+           u2.username AS updated_by,
+           CASE 
+               WHEN u2.is_admin = true THEN 'Quản lý'
+               WHEN u2.is_team_lead = true THEN 'Tổ trưởng'
+               ELSE 'Nhân viên'
+           END AS updated_role,
+           t.team_name
+    FROM "Customer" c
+    LEFT JOIN "User" u ON c.created_by = u.id
+    LEFT JOIN "User" u2 ON c.updated_by = u2.id
+    LEFT JOIN "Team" t ON t.id = c.team_id
+    WHERE c.updated_by IS NOT NULL OR c.status = '2'
+    ${searchCondition}
+    ORDER BY c.created_by DESC
+    LIMIT :limit OFFSET :offset
+)
+SELECT CAST((SELECT COUNT(*) 
+             FROM "Customer" c 
+             WHERE c.updated_by IS NOT NULL OR c.status = '2') AS INTEGER) AS total, 
+       json_agg(customer_data) AS customers 
+FROM customer_data;
+
       `,
       {
         replacements,
