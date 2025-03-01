@@ -410,7 +410,7 @@ app.get("/customers/check", async (req, res) => {
     LEFT JOIN "User" u ON c.created_by = u.id
     LEFT JOIN "User" u2 ON c.updated_by = u2.id
     LEFT JOIN "Team" t ON t.id = c.team_id
-    WHERE c.updated_by IS NOT NULL OR c.status = '2'
+    WHERE c.status = '2'
     ${searchCondition}
     ORDER BY c.updated_by DESC, c.team_id ASC ${orderCondition}
     LIMIT :limit OFFSET :offset
