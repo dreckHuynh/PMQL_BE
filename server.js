@@ -417,7 +417,7 @@ app.get("/customers/check", async (req, res) => {
 )
 SELECT CAST((SELECT COUNT(*) 
              FROM "Customer" c 
-             WHERE c.updated_by IS NOT NULL OR c.status = '2') AS INTEGER) AS total, 
+             WHERE c.status = '2') AS INTEGER) AS total, 
        json_agg(customer_data) AS customers 
 FROM customer_data;
 
