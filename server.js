@@ -227,6 +227,8 @@ app.get("/customers", async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const search = req.query.search ? `%${req.query.search}%` : null;
+    const order_by = req.query.order_by || null;
+    const order_type = req.query.order_type || null;
     const offset = (page - 1) * limit;
 
     const replacements = { limit, offset };
@@ -236,13 +238,15 @@ app.get("/customers", async (req, res) => {
       searchCondition = `WHERE c.full_name ILIKE :search OR c.phone_number ILIKE :search`;
       replacements.search = search;
     }
+    let orderCondition = ``;
+    if (order_by && order_type) {
+      orderCondition = ` ${order_by} ${order_type}`;
+    }
 
     const result = await sequelize.query(
       `
       WITH customer_data AS (
         SELECT c.*, 
-              u.username AS created_by,
-              u2.username AS updated_by,
               CASE 
                 WHEN u.is_admin = true THEN 'Quản lý'
                 WHEN u.is_team_lead = true THEN 'Tổ trưởng'
@@ -259,7 +263,7 @@ app.get("/customers", async (req, res) => {
         LEFT JOIN "User" u2 ON c.updated_by = u2.id
         LEFT JOIN "Team" t ON t.id = c.team_id
         ${searchCondition}
-        ORDER BY c.created_by DESC , c.team_id ASC
+        ORDER BY c.created_by DESC , c.team_id ASC ${orderCondition}
         LIMIT :limit OFFSET :offset
       )
       SELECT CAST((SELECT COUNT(*) FROM "Customer") AS INTEGER) AS total, 
@@ -310,6 +314,14 @@ app.get("/customers/check", async (req, res) => {
     const search = req.query.search ? `%${req.query.search}%` : null;
     const offset = (page - 1) * limit;
 
+    const order_by = req.query.order_by || null;
+    const order_type = req.query.order_type || null;
+
+    let orderCondition = ``;
+    if (order_by && order_type) {
+      orderCondition = ` ${order_by} ${order_type}`;
+    }
+
     const replacements = { limit, offset };
     let searchCondition = "";
 
@@ -341,7 +353,7 @@ app.get("/customers/check", async (req, res) => {
     LEFT JOIN "Team" t ON t.id = c.team_id
     WHERE c.updated_by IS NOT NULL OR c.status = '2'
     ${searchCondition}
-    ORDER BY c.updated_by DESC, c.team_id ASC 
+    ORDER BY c.updated_by DESC, c.team_id ASC ${orderCondition}
     LIMIT :limit OFFSET :offset
 )
 SELECT CAST((SELECT COUNT(*) 
