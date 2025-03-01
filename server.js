@@ -528,6 +528,7 @@ app.post("/customers", async (req, res) => {
       status,
       team_id,
       updated_by,
+      created_at,
     } = req.body;
 
     if (!phone_number) {
@@ -556,7 +557,7 @@ app.post("/customers", async (req, res) => {
       ) 
       VALUES (
         :full_name, :year_of_birth, :phone_number, :note, :role_note,
-        :status, :team_id, :updated_by, NOW(), :updated_by, NOW()
+        :status, :team_id, :updated_by, :created_at, :updated_by, NOW()
       )
       `,
       {
@@ -568,6 +569,7 @@ app.post("/customers", async (req, res) => {
           role_note,
           status,
           team_id,
+          created_at,
           updated_by,
         },
         type: sequelize.QueryTypes.INSERT,
@@ -593,6 +595,7 @@ app.put("/customers", extractUserId, async (req, res) => {
       team_id,
       updated_by,
       id,
+      updated_at,
     } = req.body;
     const userId = req.userId;
 
@@ -682,7 +685,7 @@ app.put("/customers", extractUserId, async (req, res) => {
        , team_id = :team_id
        , status = :status
        , updated_by = :updatedByInt
-       , updated_at = NOW() 
+       , updated_at = :updated_at
        WHERE id = :id`,
       {
         replacements: {
@@ -694,6 +697,7 @@ app.put("/customers", extractUserId, async (req, res) => {
           status,
           team_id,
           updatedByInt,
+          updated_at,
           id,
         },
         type: sequelize.QueryTypes.UPDATE,
