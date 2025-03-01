@@ -1086,7 +1086,7 @@ app.get("/teams", extractUserId, async (req, res) => {
 
       LEFT JOIN "User" u ON t.created_by = u.id
       LEFT JOIN "User" u2 ON t.updated_by = u2.id
-      ORDER BY t.team_name ASC, t.id ASC, t.created_at ASC
+      ORDER BY t.created_at ASC , t.team_name ASC, t.id ASC
       ${page && limit ? "LIMIT :limitNum OFFSET :offset" : ""}
     `;
 
