@@ -276,20 +276,20 @@ app.get("/customers", async (req, res) => {
 
     return res.json({
       data:
-        customers.map((e) => {
-          full_name,
-            year_of_birth,
-            phone_number,
-            note,
-            role_note,
-            status,
-            created_at,
-            updated_at,
-            team_id,
-            created_by,
-            id,
-            team_name;
-        }) || [],
+        customers.map((e) => ({
+          full_name: e.full_name,
+          year_of_birth: e.year_of_birth,
+          phone_number: e.phone_number,
+          note: e.note,
+          role_note: e.role_note,
+          status: e.status,
+          created_at: e.created_at,
+          updated_at: e.updated_at,
+          team_id: e.team_id,
+          created_by: e.created_by,
+          id: e.id,
+          team_name: e.team_name,
+        })) || [],
       total,
       page,
       totalPages: Math.ceil(total / limit),
