@@ -259,7 +259,7 @@ app.get("/customers", async (req, res) => {
         LEFT JOIN "User" u2 ON c.updated_by = u2.id
         LEFT JOIN "Team" t ON t.id = c.team_id
         ${searchCondition}
-        ORDER BY c.created_by DESC
+        ORDER BY c.created_by DESC , c.team_id ASC
         LIMIT :limit OFFSET :offset
       )
       SELECT CAST((SELECT COUNT(*) FROM "Customer") AS INTEGER) AS total, 
@@ -314,7 +314,7 @@ app.get("/customers/check", async (req, res) => {
     let searchCondition = "";
 
     if (search) {
-      searchCondition = `WHERE c.full_name ILIKE :search OR c.phone_number ILIKE :search`;
+      searchCondition = `AND c.full_name ILIKE :search OR c.phone_number ILIKE :search`;
       replacements.search = search;
     }
 
@@ -341,7 +341,7 @@ app.get("/customers/check", async (req, res) => {
     LEFT JOIN "Team" t ON t.id = c.team_id
     WHERE c.updated_by IS NOT NULL OR c.status = '2'
     ${searchCondition}
-    ORDER BY c.created_by DESC
+    ORDER BY c.updated_by DESC, c.team_id ASC 
     LIMIT :limit OFFSET :offset
 )
 SELECT CAST((SELECT COUNT(*) 
@@ -726,7 +726,7 @@ app.get("/employees", async (req, res) => {
         LEFT JOIN "User" c ON u.created_by = c.id
         LEFT JOIN "User" u2 ON u.updated_by = u2.id
         WHERE u.is_admin = false
-        ORDER BY u.id ASC
+        ORDER BY u.id ASC, u.team_id ASC
         LIMIT :limit OFFSET :offset
       )
       SELECT CAST((SELECT COUNT(*) FROM "User") AS INTEGER) AS total, 
