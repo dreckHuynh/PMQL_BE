@@ -902,7 +902,7 @@ app.put("/employees/reset", async (req, res) => {
     }
     const username = userExists[0]?.username;
     const hashedPassword = await bcrypt.hash(username, 10);
-    const resetQuery = `UPDATE "User" SET pasword = : hashedPassword, is_first_login = TRUE WHERE id = :id`;
+    const resetQuery = `UPDATE "User" SET pasword = :hashedPassword, is_first_login = TRUE WHERE id = :id`;
     await sequelize.query(resetQuery, { replacements: { hashedPassword, id } });
 
     res.json({ message: "Reset password successfully" });
