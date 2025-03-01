@@ -263,7 +263,7 @@ app.get("/customers", async (req, res) => {
         LEFT JOIN "User" u2 ON c.updated_by = u2.id
         LEFT JOIN "Team" t ON t.id = c.team_id
         ${searchCondition}
-        ORDER BY c.created_by DESC , c.team_id ASC ${orderCondition}
+        ORDER BY c.created_by DESC , c.id DESC, c.team_id ASC ${orderCondition}
         LIMIT :limit OFFSET :offset
       )
       SELECT CAST((SELECT COUNT(*) FROM "Customer") AS INTEGER) AS total, 
