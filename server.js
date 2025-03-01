@@ -306,6 +306,65 @@ app.get("/customers", async (req, res) => {
 });
 
 // Customer
+// GET: Lấy danh sách khách hàng (phân trang)
+app.get("/customers/export", async (req, res) => {
+  try {
+    const result = await sequelize.query(
+      `
+      WITH customer_data AS (
+        SELECT c.*, 
+              CASE 
+                WHEN u.is_admin = true THEN 'Quản lý'
+                WHEN u.is_team_lead = true THEN 'Tổ trưởng'
+                ELSE 'Nhân viên'
+              END AS created_by,
+              CASE 
+                WHEN u2.is_admin = true THEN 'Quản lý'
+                WHEN u2.is_team_lead = true THEN 'Tổ trưởng'
+                ELSE 'Nhân viên'
+              END AS updated_by,
+              t.team_name
+        FROM "Customer" c
+        LEFT JOIN "User" u ON c.created_by = u.id
+        LEFT JOIN "User" u2 ON c.updated_by = u2.id
+        LEFT JOIN "Team" t ON t.id = c.team_id
+      )
+      SELECT CAST((SELECT COUNT(*) FROM "Customer") AS INTEGER) AS total, 
+            json_agg(customer_data) AS customers 
+      FROM customer_data;
+      `,
+      {
+        type: sequelize.QueryTypes.SELECT,
+      }
+    );
+
+    const { total, customers } = result[0] || { total: 0, customers: [] };
+
+    return res.json({
+      data:
+        customers.map((e) => ({
+          full_name: e.full_name,
+          year_of_birth: e.year_of_birth,
+          phone_number: e.phone_number,
+          note: e.note,
+          role_note: e.role_note,
+          status: e.status,
+          created_at: e.created_at,
+          team_id: e.team_id,
+          created_by: e.created_by,
+          id: e.id,
+          team_name: e.team_name,
+        })) || [],
+    });
+  } catch (err) {
+    console.error("Error fetching customers:", err);
+    return res
+      .status(500)
+      .json({ error: "Error fetching customers", details: err.message });
+  }
+});
+
+// Customer
 // GET: Lấy danh sách khách hàng
 app.get("/customers/check", async (req, res) => {
   try {
