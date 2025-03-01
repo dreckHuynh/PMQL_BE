@@ -1100,7 +1100,7 @@ app.get("/teams", extractUserId, async (req, res) => {
     const countQuery = `
       SELECT COUNT(*)::int AS total 
       FROM "Team" t
-      INNER JOIN (SELECT team_id FROM "User" WHERE id = :userId) ut ON t.id = ut.team_id
+      INNER JOIN (SELECT team_id FROM "User" WHERE id = :userId) ut ON t.id = ut.team_id OR t.created_by = :userId
     `;
 
     const countResult = await sequelize.query(countQuery, {
