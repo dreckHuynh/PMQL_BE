@@ -1056,22 +1056,21 @@ app.get("/statistical", async (req, res) => {
 });
 
 //
-
 /**
  * GET /api/teams
  * Lấy danh sách team của user (có hỗ trợ phân trang)
  */
 app.get("/teams", extractUserId, async (req, res) => {
   try {
-    const { page, limit } = req.query;
-    const pageNum = parseInt(page, 10) || null;
-    const limitNum = parseInt(limit, 10) || null;
-    const offset = (pageNum - 1) * limitNum || null;
-    const userId = req.userId; // Lấy id user từ token
+    const { page = 1, limit = 10 } = req.query;
+    const pageNum = Math.max(parseInt(page, 10), 1); // Page mặc định là 1
+    const limitNum = Math.max(parseInt(limit, 10), 1); // Limit mặc định là 10
+    const offset = (pageNum - 1) * limitNum;
+    const userId = req.userId;
 
-    console.log(`User ID from token: ${userId}`); // Debug log
+    console.log(`User ID from token: ${userId}`);
 
-    // Query để lấy danh sách team mà user thuộc về
+    // Query lấy danh sách team của user (hỗ trợ admin xem tất cả teams)
     const teamsQuery = `
       WITH user_team AS (
           SELECT team_id, is_admin 
@@ -1083,12 +1082,11 @@ app.get("/teams", extractUserId, async (req, res) => {
             u2.username AS updated_by
       FROM "Team" t
       INNER JOIN user_team ut 
-      ON (ut.is_admin = true OR t.id = ut.team_id) 
-
+      ON (ut.is_admin = true OR t.id = ut.team_id)
       LEFT JOIN "User" u ON t.created_by = u.id
       LEFT JOIN "User" u2 ON t.updated_by = u2.id
-      ORDER BY t.created_at ASC , t.team_name ASC, t.id ASC
-      ${page && limit ? "LIMIT :limitNum OFFSET :offset" : ""}
+      ORDER BY t.created_at ASC, t.team_name ASC, t.id ASC
+      LIMIT :limitNum OFFSET :offset
     `;
 
     const teams = await sequelize.query(teamsQuery, {
@@ -1096,11 +1094,17 @@ app.get("/teams", extractUserId, async (req, res) => {
       replacements: { userId, limitNum, offset },
     });
 
-    // Đếm tổng số teams của user
+    // Query đếm tổng số teams của user (bao gồm trường hợp admin)
     const countQuery = `
+      WITH user_team AS (
+          SELECT team_id, is_admin 
+          FROM "User" 
+          WHERE id = :userId
+      )
       SELECT COUNT(*)::int AS total 
       FROM "Team" t
-      INNER JOIN (SELECT team_id FROM "User" WHERE id = :userId) ut ON t.id = ut.team_id OR t.created_by = :userId
+      INNER JOIN user_team ut 
+      ON (ut.is_admin = true OR t.id = ut.team_id)
     `;
 
     const countResult = await sequelize.query(countQuery, {
@@ -1113,7 +1117,7 @@ app.get("/teams", extractUserId, async (req, res) => {
       data: teams,
       total,
       page: pageNum,
-      totalPages: limit ? Math.ceil(total / limitNum) : 1,
+      totalPages: Math.ceil(total / limitNum),
     });
   } catch (err) {
     console.error("Error fetching teams:", err);
