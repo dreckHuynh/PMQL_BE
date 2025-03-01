@@ -240,7 +240,7 @@ app.get("/customers", async (req, res) => {
     }
     let orderCondition = ``;
     if (order_by && order_type) {
-      orderCondition = ` ${order_by} ${order_type}`;
+      orderCondition = ` , ${order_by} ${order_type}`;
     }
 
     const result = await sequelize.query(
@@ -319,7 +319,7 @@ app.get("/customers/check", async (req, res) => {
 
     let orderCondition = ``;
     if (order_by && order_type) {
-      orderCondition = ` ${order_by} ${order_type}`;
+      orderCondition = `, ${order_by} ${order_type}`;
     }
 
     const replacements = { limit, offset };
