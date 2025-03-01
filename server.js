@@ -284,7 +284,6 @@ app.get("/customers", async (req, res) => {
           role_note: e.role_note,
           status: e.status,
           created_at: e.created_at,
-          updated_at: e.updated_at,
           team_id: e.team_id,
           created_by: e.created_by,
           id: e.id,
