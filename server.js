@@ -891,7 +891,7 @@ app.put("/employees/reset", async (req, res) => {
       return res.status(400).json({ error: "User ID is required" });
     }
 
-    const checkUserQuery = `SELECT COUNT(*)::int AS count FROM "User" WHERE id = :id`;
+    const checkUserQuery = `SELECT COUNT(*)::int AS count, username FROM "User" WHERE id = :id GROUP BY username`;
     const userExists = await sequelize.query(checkUserQuery, {
       replacements: { id },
       type: sequelize.QueryTypes.SELECT,
@@ -900,9 +900,10 @@ app.put("/employees/reset", async (req, res) => {
     if (!userExists[0]?.count) {
       return res.status(404).json({ error: "User not found" });
     }
-
-    const resetQuery = `UPDATE "User" SET is_first_login = TRUE WHERE id = :id`;
-    await sequelize.query(resetQuery, { replacements: { id } });
+    const username = userExists[0]?.username;
+    const hashedPassword = await bcrypt.hash(username, 10);
+    const resetQuery = `UPDATE "User" SET pasword = : hashedPassword, is_first_login = TRUE WHERE id = :id`;
+    await sequelize.query(resetQuery, { replacements: { hashedPassword, id } });
 
     res.json({ message: "Reset password successfully" });
   } catch (error) {
