@@ -1062,7 +1062,7 @@ app.get("/statistical", async (req, res) => {
  */
 app.get("/teams", extractUserId, async (req, res) => {
   try {
-    const { page = 1, limit = 10 } = req.query;
+    const { page, limit } = req.query;
     const pageNum = Math.max(parseInt(page, 10), 1); // Page mặc định là 1
     const limitNum = Math.max(parseInt(limit, 10), 1); // Limit mặc định là 10
     const offset = (pageNum - 1) * limitNum;
@@ -1086,7 +1086,7 @@ app.get("/teams", extractUserId, async (req, res) => {
       LEFT JOIN "User" u ON t.created_by = u.id
       LEFT JOIN "User" u2 ON t.updated_by = u2.id
       ORDER BY t.created_at ASC, t.team_name ASC, t.id ASC
-      LIMIT :limitNum OFFSET :offset
+      ${page && limit ? `LIMIT :limitNum OFFSET :offset` : ``} 
     `;
 
     const teams = await sequelize.query(teamsQuery, {
