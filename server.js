@@ -275,6 +275,89 @@ app.get("/customers", async (req, res) => {
     const { total, customers } = result[0] || { total: 0, customers: [] };
 
     return res.json({
+      data:
+        customers.map((e) => {
+          full_name,
+            year_of_birth,
+            phone_number,
+            note,
+            role_note,
+            status,
+            created_at,
+            updated_at,
+            team_id,
+            created_by,
+            id,
+            team_name;
+        }) || [],
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    });
+  } catch (err) {
+    console.error("Error fetching customers:", err);
+    return res
+      .status(500)
+      .json({ error: "Error fetching customers", details: err.message });
+  }
+});
+
+// Customer
+// GET: Lấy danh sách khách hàng
+app.get("/customers/check", async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const search = req.query.search ? `%${req.query.search}%` : null;
+    const offset = (page - 1) * limit;
+
+    const replacements = { limit, offset };
+    let searchCondition = "";
+
+    if (search) {
+      searchCondition = `WHERE c.full_name ILIKE :search OR c.phone_number ILIKE :search`;
+      replacements.search = search;
+    }
+
+    const result = await sequelize.query(
+      `
+      WITH customer_data AS (
+        SELECT c.*, 
+              u.username AS created_by,
+              u2.username AS updated_by,
+              CASE 
+                WHEN u.is_admin = true THEN 'Quản lý'
+                WHEN u.is_team_lead = true THEN 'Tổ trưởng'
+                ELSE 'Nhân viên'
+              END AS created_by,
+              CASE 
+                WHEN u2.is_admin = true THEN 'Quản lý'
+                WHEN u2.is_team_lead = true THEN 'Tổ trưởng'
+                ELSE 'Nhân viên'
+              END AS updated_by,
+              t.team_name
+        FROM "Customer" c
+        LEFT JOIN "User" u ON c.created_by = u.id
+        LEFT JOIN "User" u2 ON c.updated_by = u2.id
+        LEFT JOIN "Team" t ON t.id = u.team_id OR t.id = u2.team_id
+        WHERE c.updated_by is not null OR c.status = '2'
+        ${searchCondition}
+        ORDER BY c.created_by DESC
+        LIMIT :limit OFFSET :offset
+      )
+      SELECT CAST((SELECT COUNT(*) FROM "Customer") AS INTEGER) AS total, 
+            json_agg(customer_data) AS customers 
+      FROM customer_data;
+      `,
+      {
+        replacements,
+        type: sequelize.QueryTypes.SELECT,
+      }
+    );
+
+    const { total, customers } = result[0] || { total: 0, customers: [] };
+
+    return res.json({
       data: customers || [],
       total,
       page,
