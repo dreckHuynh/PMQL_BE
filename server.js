@@ -1064,9 +1064,9 @@ app.get("/statistical", async (req, res) => {
 app.get("/teams", extractUserId, async (req, res) => {
   try {
     const { page, limit } = req.query;
-    const pageNum = parseInt(page, 10) || 1;
-    const limitNum = parseInt(limit, 10) || 10;
-    const offset = (pageNum - 1) * limitNum;
+    const pageNum = parseInt(page, 10) || null;
+    const limitNum = parseInt(limit, 10) || null;
+    const offset = (pageNum - 1) * limitNum || null;
     const userId = req.userId; // Lấy id user từ token
 
     console.log(`User ID from token: ${userId}`); // Debug log
