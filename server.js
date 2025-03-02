@@ -460,7 +460,7 @@ app.get("/customers/check", extractUserId, async (req, res) => {
 SELECT CAST((SELECT COUNT(*) 
              FROM "Customer" c 
              WHERE c.status = '2') AS INTEGER) AS total, 
-       json_agg(customer_data) AS customers ,
+       json_agg(customer_data) AS customers
 FROM customer_data;
 
       `,
