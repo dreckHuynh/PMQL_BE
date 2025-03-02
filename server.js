@@ -778,20 +778,19 @@ app.delete("/customers/:id", extractUserId, async (req, res) => {
       const checkUserStatus = `SELECT status FROM "Customer" WHERE id = :id`;
       const checkUserStatusInfo = await sequelize.query(checkUserStatus, {
         type: sequelize.QueryTypes.SELECT,
-        replacements: { userId },
+        replacements: { id },
       });
       const userStatus = checkUserStatusInfo[0]?.status;
       if (userStatus === "2") {
-        return res
-          .status(500)
-          .json({ error: "Không thể xoá khách hàng này !" });
+        console.log("HERE");
+        return res.json({ error: "Không thể xoá khách hàng này !" });
       }
     }
 
-    const result = await sequelize.query(
-      `DELETE FROM "Customer" WHERE id = :id`,
-      { replacements: { id }, type: sequelize.QueryTypes.DELETE }
-    );
+    await sequelize.query(`DELETE FROM "Customer" WHERE id = :id`, {
+      replacements: { id },
+      type: sequelize.QueryTypes.DELETE,
+    });
 
     return res.json({ message: "Customer deleted successfully" });
   } catch (err) {
