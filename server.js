@@ -780,7 +780,6 @@ app.put("/users", async (req, res) => {
   }
 });
 
-//
 app.get("/employees", extractUserId, async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -801,18 +800,18 @@ app.get("/employees", extractUserId, async (req, res) => {
 
     const { is_admin, team_id } = userInfo[0];
 
-    let condition = "";
+    let condition = `WHERE u.is_admin = false`; // Luôn loại bỏ admin khỏi danh sách
     let replacements = { limit, offset };
 
     if (!is_admin) {
-      // Nếu không phải admin, chỉ lấy nhân viên cùng team_id
-      condition = `AND user.team_id = :team_id`;
+      // Nếu không phải admin, chỉ lấy nhân viên trong team của mình
+      condition += ` AND u.team_id = :team_id`;
       replacements.team_id = team_id;
     }
 
     const query = `
       WITH user_data AS (
-        SELECT u.*, 
+        SELECT u.id, u.name, u.username, u.team_id, u.status, 
                c.username AS created_by_username, 
                u2.username AS updated_by_username
         FROM "User" AS u
@@ -822,7 +821,7 @@ app.get("/employees", extractUserId, async (req, res) => {
         ORDER BY u.team_id ASC, u.id ASC
         LIMIT :limit OFFSET :offset
       )
-      SELECT CAST((SELECT COUNT(*) FROM "User" As user WHERE user.is_admin = false ${condition}) AS INTEGER) AS total, 
+      SELECT CAST((SELECT COUNT(*) FROM "User" u ${condition}) AS INTEGER) AS total, 
              json_agg(user_data) AS users 
       FROM user_data;
     `;
@@ -847,6 +846,7 @@ app.get("/employees", extractUserId, async (req, res) => {
       .json({ error: "Error fetching users", details: err.message });
   }
 });
+
 /**
  * POST /api/employees
  * Tạo nhân viên mới
