@@ -433,7 +433,8 @@ app.get("/customers/check", async (req, res) => {
     LEFT JOIN "User" u ON c.created_by = u.id
     LEFT JOIN "User" u2 ON c.updated_by = u2.id
     LEFT JOIN "Team" t ON t.id = c.team_id
-    WHERE 1=1 
+    WHERE 1=1
+    AND c.status = '0' OR c.status ='2'
     ${searchCondition}
     ORDER BY c.created_at DESC
     LIMIT :limit OFFSET :offset
