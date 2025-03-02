@@ -389,7 +389,7 @@ app.get("/customers/export", async (req, res) => {
 
 // Customer
 // GET: Lấy danh sách khách hàng
-app.get("/customers/check", async (req, res) => {
+app.get("/customers/check", extractUserId, async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
@@ -410,6 +410,22 @@ app.get("/customers/check", async (req, res) => {
     if (search) {
       searchCondition = `AND c.full_name ILIKE :search OR c.phone_number ILIKE :search`;
       replacements.search = search;
+    }
+
+    const userId = req.userId;
+
+    // Lấy quyền hạn của user
+    const userQuery = `SELECT is_admin, is_team_lead, team_id FROM "User" WHERE id = :userId`;
+    const userResult = await sequelize.query(userQuery, {
+      replacements: { userId },
+      type: sequelize.QueryTypes.SELECT,
+    });
+
+    const isAdmin = userResult[0].is_admin;
+    let joinTeam = ``;
+    if (!isAdmin) {
+      joinTeam = ` AND c.team_id = :team_id`;
+      replacements.team_id = userResult[0].team_id;
     }
 
     const result = await sequelize.query(
@@ -435,6 +451,7 @@ app.get("/customers/check", async (req, res) => {
     LEFT JOIN "Team" t ON t.id = c.team_id
     WHERE 1=1
     AND c.status = '0' OR c.status ='2'
+    ${joinTeam}
     ${searchCondition}
     ORDER BY c.created_at DESC
     LIMIT :limit OFFSET :offset
