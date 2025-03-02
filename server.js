@@ -771,9 +771,21 @@ app.delete("/customers/:id", extractUserId, async (req, res) => {
       replacements: { userId },
     });
 
-    const isAdmin = userResult[0].is_admin;
+    const isAdmin = userInfo[0].is_admin;
 
     if (!isAdmin) {
+      // Lấy thông tin user hiện tại
+      const checkUserStatus = `SELECT status FROM "Customer" WHERE id = :id`;
+      const checkUserStatusInfo = await sequelize.query(checkUserStatus, {
+        type: sequelize.QueryTypes.SELECT,
+        replacements: { userId },
+      });
+      const userStatus = checkUserStatusInfo[0]?.status;
+      if (userStatus === "2") {
+        return res
+          .status(500)
+          .json({ error: "Không thể xoá khách hàng này !" });
+      }
     }
 
     const result = await sequelize.query(
