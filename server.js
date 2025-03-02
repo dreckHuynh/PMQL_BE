@@ -783,7 +783,9 @@ app.delete("/customers/:id", extractUserId, async (req, res) => {
       const userStatus = checkUserStatusInfo[0]?.status;
       if (userStatus === "2") {
         console.log("HERE");
-        return res.json({ error: "Không thể xoá khách hàng này !" });
+        return res
+          .status(400)
+          .json({ error: "Không thể xoá khách hàng này !" });
       }
     }
 
