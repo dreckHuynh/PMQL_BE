@@ -1046,12 +1046,19 @@ app.get("/statistical", async (req, res) => {
 
     const query = `
       SELECT COUNT(1) AS call_count, 
-       c.role_note AS caller, 
+       CASE 
+        WHEN c.role_note = '0' THEN '0'
+        WHEN c.role_note = '1' THEN 'CV'
+        WHEN c.role_note = '2' THEN 'APP'
+        WHEN c.role_note = '3' THEN 'AD'
+        WHEN c.role_note = '4' THEN 'DD'
+       ELSE '0'
+       END AS caller, 
        t.team_name
       FROM "Customer" AS c
       INNER JOIN "Team" AS t ON c.team_id = t.id
       WHERE c.status = '2'
-      AND DATE_TRUNC('month', c.updated_at) = DATE_TRUNC('month', NOW())  -- Chỉ lấy dữ liệu trong tháng hiện tại
+      AND DATE_TRUNC('month', c.updated_at) = DATE_TRUNC('month', NOW())
       ${whereClause}
       GROUP BY c.team_id, c.role_note, t.team_name
       ORDER BY call_count DESC;
