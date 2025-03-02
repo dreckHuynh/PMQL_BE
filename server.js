@@ -222,7 +222,7 @@ app.post("/auth/update-password", async (req, res) => {
 
 // Customer
 // GET: Lấy danh sách khách hàng (phân trang)
-app.get("/customers", async (req, res) => {
+app.get("/customers", extractUserId, async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
@@ -231,18 +231,33 @@ app.get("/customers", async (req, res) => {
     const order_type = req.query.order_type || null;
     const offset = (page - 1) * limit;
 
+    const userId = req.userId;
+
+    // Lấy quyền hạn của user
+    const userQuery = `SELECT is_admin, is_team_lead, team_id FROM "User" WHERE id = :userId`;
+    const userResult = await sequelize.query(userQuery, {
+      replacements: { userId },
+      type: sequelize.QueryTypes.SELECT,
+    });
+
+    const isAdmin = userResult[0].is_admin;
+
     const replacements = { limit, offset };
     let searchCondition = "";
 
     if (search) {
-      searchCondition = `WHERE c.full_name ILIKE :search OR c.phone_number ILIKE :search`;
+      searchCondition = `AND c.full_name ILIKE :search OR c.phone_number ILIKE :search`;
       replacements.search = search;
     }
     let orderCondition = ``;
     if (order_by && order_type) {
       orderCondition = ` , ${order_by} ${order_type}`;
     }
-
+    let addFilter = ``;
+    if (!isAdmin) {
+      addFilter = `AND c.team_id = :team_id`;
+      replacements.team_id = userResult[0].team_id;
+    }
     const result = await sequelize.query(
       `
       WITH customer_data AS (
@@ -262,7 +277,9 @@ app.get("/customers", async (req, res) => {
         LEFT JOIN "User" u ON c.created_by = u.id
         LEFT JOIN "User" u2 ON c.updated_by = u2.id
         LEFT JOIN "Team" t ON t.id = c.team_id
+        WHERE 1=1 
         ${searchCondition}
+        ${addFilter}
         ORDER BY c.team_id ASC ${orderCondition}
         LIMIT :limit OFFSET :offset
       )
