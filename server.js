@@ -806,7 +806,7 @@ app.get("/employees", extractUserId, async (req, res) => {
 
     if (!is_admin) {
       // Nếu không phải admin, chỉ lấy nhân viên cùng team_id
-      condition = `AND team_id = :team_id`;
+      condition = `AND user.team_id = :team_id`;
       replacements.team_id = team_id;
     }
 
@@ -822,7 +822,7 @@ app.get("/employees", extractUserId, async (req, res) => {
         ORDER BY u.team_id ASC, u.id ASC
         LIMIT :limit OFFSET :offset
       )
-      SELECT CAST((SELECT COUNT(*) FROM "User" WHERE is_admin = false ${condition}) AS INTEGER) AS total, 
+      SELECT CAST((SELECT COUNT(*) FROM "User" As user WHERE user.is_admin = false ${condition}) AS INTEGER) AS total, 
              json_agg(user_data) AS users 
       FROM user_data;
     `;
