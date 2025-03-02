@@ -426,42 +426,42 @@ app.get("/customers/check", extractUserId, async (req, res) => {
     const isAdmin = userResult[0].is_admin;
     let joinTeam = ``;
     if (!isAdmin) {
-      joinTeam = ` AND c.team_id = :team_id`;
+      joinTeam = `AND c.team_id = :team_id`;
       replacements.team_id = userResult[0].team_id;
     }
 
     const result = await sequelize.query(
       `
       WITH customer_data AS (
-    SELECT c.*, 
-           u.username AS created_by,
-           CASE 
-               WHEN u.is_admin = true THEN 'Quản lý'
-               WHEN u.is_team_lead = true THEN 'Tổ trưởng'
-               ELSE 'Nhân viên'
-           END AS created_role,
-           u2.username AS updated_by,
-           CASE 
-               WHEN u2.is_admin = true THEN 'Quản lý'
-               WHEN u2.is_team_lead = true THEN 'Tổ trưởng'
-               ELSE 'Nhân viên'
-           END AS updated_role,
-           t.team_name
-    FROM "Customer" c
-    LEFT JOIN "User" u ON c.created_by = u.id
-    LEFT JOIN "User" u2 ON c.updated_by = u2.id
-    LEFT JOIN "Team" t ON t.id = c.team_id
-    WHERE 1=1
-    AND c.status = '0' OR c.status ='2'
-    ${joinTeam}
-    ${searchCondition}
-    ORDER BY c.created_at DESC
-    LIMIT :limit OFFSET :offset
+        SELECT c.*, 
+              u.username AS created_by,
+              CASE 
+                  WHEN u.is_admin = true THEN 'Quản lý'
+                  WHEN u.is_team_lead = true THEN 'Tổ trưởng'
+                  ELSE 'Nhân viên'
+              END AS created_role,
+              u2.username AS updated_by,
+              CASE 
+                  WHEN u2.is_admin = true THEN 'Quản lý'
+                  WHEN u2.is_team_lead = true THEN 'Tổ trưởng'
+                  ELSE 'Nhân viên'
+              END AS updated_role,
+              t.team_name
+        FROM "Customer" c
+        LEFT JOIN "User" u ON c.created_by = u.id
+        LEFT JOIN "User" u2 ON c.updated_by = u2.id
+        LEFT JOIN "Team" t ON t.id = c.team_id
+        WHERE 1=1
+        AND (c.status = '0' OR c.status = '2')
+        ${joinTeam}
+        ${searchCondition}
+        ORDER BY c.created_at DESC
+        LIMIT :limit OFFSET :offset
 )
 SELECT CAST((SELECT COUNT(*) 
              FROM "Customer" c 
              WHERE c.status = '2') AS INTEGER) AS total, 
-       json_agg(customer_data) AS customers 
+       json_agg(customer_data) AS customers ,
 FROM customer_data;
 
       `,
