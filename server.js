@@ -1042,7 +1042,7 @@ app.get("/statistical", async (req, res) => {
     const replacements = {};
 
     if (
-      !normalizedRoleNote &&
+      normalizedRoleNote &&
       normalizedRoleNote.length > 0 &&
       normalizedRoleNote !== "null"
     ) {
