@@ -272,7 +272,6 @@ app.get("/customers", extractUserId, async (req, res) => {
                 WHEN u2.is_team_lead = true THEN 'Tổ trưởng'
                 ELSE 'Nhân viên'
               END AS updated_by,
-              RIGHT(c.phone_number, 9) AS phone_number,
               t.team_name
         FROM "Customer" c
         LEFT JOIN "User" u ON c.created_by = u.id
