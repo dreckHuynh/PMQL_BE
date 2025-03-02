@@ -433,9 +433,9 @@ app.get("/customers/check", async (req, res) => {
     LEFT JOIN "User" u ON c.created_by = u.id
     LEFT JOIN "User" u2 ON c.updated_by = u2.id
     LEFT JOIN "Team" t ON t.id = c.team_id
-    WHERE c.status = '2'
+    WHERE 1=1 
     ${searchCondition}
-    ORDER BY c.updated_by DESC, c.team_id ASC ${orderCondition}
+    ORDER BY c.created_at DESC
     LIMIT :limit OFFSET :offset
 )
 SELECT CAST((SELECT COUNT(*) 
@@ -1082,7 +1082,7 @@ app.get("/statistical", async (req, res) => {
        t.team_name
       FROM "Customer" AS c
       INNER JOIN "Team" AS t ON c.team_id = t.id
-      WHERE c.status = '2'
+      WHERE c.status = '2' OR c.status = '0'
       AND DATE_TRUNC('month', c.updated_at) = DATE_TRUNC('month', NOW())
       ${whereClause}
       GROUP BY c.team_id, c.role_note, t.team_name
