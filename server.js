@@ -1042,7 +1042,7 @@ app.get("/statistical", async (req, res) => {
     const replacements = {};
 
     if (normalizedRoleNote) {
-      whereClause = `AND c.role_note = :role_note`;
+      whereClause = `AND c.role_note = ':role_note'`;
       replacements.role_note =
         ROLE_NOTE.find((item) => item.label === normalizedRoleNote)?.key || 0;
     }
