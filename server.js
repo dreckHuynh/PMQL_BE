@@ -296,9 +296,11 @@ app.get("/customers", extractUserId, async (req, res) => {
 
     const { total, customers } = result[0] || { total: 0, customers: [] };
 
+    console.log(customers);
+
     return res.json({
       data:
-        customers.map((e) => ({
+        customers?.map((e) => ({
           full_name: e.full_name,
           year_of_birth: e.year_of_birth,
           phone_number: e.phone_number,
@@ -753,12 +755,26 @@ app.put("/customers", extractUserId, async (req, res) => {
 });
 
 // DELETE: Xóa khách hàng theo ID
-app.delete("/customers/:id", async (req, res) => {
+app.delete("/customers/:id", extractUserId, async (req, res) => {
   try {
     const { id } = req.params;
 
     if (!id) {
       return res.status(400).json({ error: "Missing customer ID" });
+    }
+
+    const userId = req.userId;
+
+    // Lấy thông tin user hiện tại
+    const userQuery = `SELECT is_admin, team_id FROM "User" WHERE id = :userId`;
+    const userInfo = await sequelize.query(userQuery, {
+      type: sequelize.QueryTypes.SELECT,
+      replacements: { userId },
+    });
+
+    const isAdmin = userResult[0].is_admin;
+
+    if (!isAdmin) {
     }
 
     const result = await sequelize.query(
