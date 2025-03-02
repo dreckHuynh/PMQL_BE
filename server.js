@@ -781,16 +781,34 @@ app.put("/users", async (req, res) => {
 });
 
 //
-
-/**
- * GET /api/employees
- * Lấy danh sách nhân viên với phân trang
- */
-app.get("/employees", async (req, res) => {
+app.get("/employees", extractUserId, async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const offset = (page - 1) * limit;
+    const userId = req.userId;
+
+    // Lấy thông tin user hiện tại
+    const userQuery = `SELECT is_admin, team_id FROM "User" WHERE id = :userId`;
+    const userInfo = await sequelize.query(userQuery, {
+      type: sequelize.QueryTypes.SELECT,
+      replacements: { userId },
+    });
+
+    if (!userInfo.length) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const { is_admin, team_id } = userInfo[0];
+
+    let condition = "";
+    let replacements = { limit, offset };
+
+    if (!is_admin) {
+      // Nếu không phải admin, chỉ lấy nhân viên cùng team_id
+      condition = `WHERE u.team_id = :team_id`;
+      replacements.team_id = team_id;
+    }
 
     const query = `
       WITH user_data AS (
@@ -800,18 +818,18 @@ app.get("/employees", async (req, res) => {
         FROM "User" u
         LEFT JOIN "User" c ON u.created_by = c.id
         LEFT JOIN "User" u2 ON u.updated_by = u2.id
-        WHERE u.is_admin = false
+        ${condition}
         ORDER BY u.team_id ASC, u.id ASC
         LIMIT :limit OFFSET :offset
       )
-      SELECT CAST((SELECT COUNT(*) FROM "User") AS INTEGER) AS total, 
+      SELECT CAST((SELECT COUNT(*) FROM "User" ${condition}) AS INTEGER) AS total, 
              json_agg(user_data) AS users 
       FROM user_data;
     `;
 
     const result = await sequelize.query(query, {
       type: sequelize.QueryTypes.SELECT,
-      replacements: { limit, offset },
+      replacements,
     });
 
     const { total, users } = result[0] || { total: 0, users: [] };
@@ -829,7 +847,6 @@ app.get("/employees", async (req, res) => {
       .json({ error: "Error fetching users", details: err.message });
   }
 });
-
 /**
  * POST /api/employees
  * Tạo nhân viên mới
