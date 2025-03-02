@@ -816,14 +816,14 @@ app.get("/employees", extractUserId, async (req, res) => {
 
     const query = `
       WITH user_data AS (
-        SELECT u.id, u.name, u.username, u.team_id, u.status, u.is_team_lead
+        SELECT u.id, u.name, u.username, u.team_id, u.status, u.is_team_lead, 
                c.username AS created_by_username, 
                u2.username AS updated_by_username
         FROM "User" AS u
         LEFT JOIN "User" c ON u.created_by = c.id
         LEFT JOIN "User" u2 ON u.updated_by = u2.id
         ${condition}
-        ORDER BY u.team_id ASC, u.id ASC
+        ORDER BY u.is_team_lead DESC, u.team_id ASC, u.id ASC
         LIMIT :limit OFFSET :offset
       )
       SELECT CAST((SELECT COUNT(*) FROM "User" u ${condition}) AS INTEGER) AS total, 
