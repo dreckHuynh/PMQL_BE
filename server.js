@@ -323,7 +323,10 @@ app.get("/customers/export", async (req, res) => {
                 WHEN u2.is_team_lead = true THEN 'Tổ trưởng'
                 ELSE 'Nhân viên'
               END AS updated_by,
-              c.updated_at,
+              CASE 
+              WHEN c.status = '2' THEN c.updated_at
+              ELSE null
+              END as updated_at
               t.team_name
         FROM "Customer" c
         LEFT JOIN "User" u ON c.created_by = u.id
