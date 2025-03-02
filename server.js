@@ -326,7 +326,7 @@ app.get("/customers/export", async (req, res) => {
               CASE 
               WHEN c.status = '2' THEN c.updated_at
               ELSE null
-              END as updated_at
+              END as updated_at,
               t.team_name
         FROM "Customer" c
         LEFT JOIN "User" u ON c.created_by = u.id
