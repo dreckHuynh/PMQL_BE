@@ -354,7 +354,7 @@ app.get("/customers/export", async (req, res) => {
           team_id: e.team_id,
           created_by: e.created_by,
           id: e.id,
-          update_at: e.update_at,
+          updated_at: e.updated_at,
           team_name: e.team_name,
         })) || [],
     });
