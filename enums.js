@@ -4,12 +4,12 @@ export const USER_ROLE = {
 };
 
 export const ROLE_NOTE = [
-  { key: "0", label: "CV" },
-  { key: "1", label: "APP" },
-  { key: "2", label: "DD" },
-  { key: "3", label: "AD" },
+  { key: "0", label: "0" },
+  { key: "1", label: "CV" },
+  { key: "2", label: "APP" },
+  { key: "3", label: "DD" },
+  { key: "4", label: "AD" },
 ];
-
 export const CUSTOMER_STATUS = [
   { key: 0, label: "Đợi tải" },
   { key: 1, label: "Đang gọi" },

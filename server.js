@@ -1033,7 +1033,7 @@ app.put("/employees", extractUserId, async (req, res) => {
 app.get("/statistical", async (req, res) => {
   try {
     const { role_note } = req.query;
-    const normalizedRoleNote = role_note === "null" ? null : role_note;
+    const normalizedRoleNote = !role_note ? null : role_note;
 
     let whereClause = "";
     const replacements = {};
@@ -1041,7 +1041,7 @@ app.get("/statistical", async (req, res) => {
     if (normalizedRoleNote) {
       whereClause = `AND c.role_note = :role_note`;
       replacements.role_note =
-        ROLE_NOTE.find((item) => item.label === normalizedRoleNote)?.key || "0";
+        ROLE_NOTE.find((item) => item.label === normalizedRoleNote)?.key || 0;
     }
 
     const query = `
@@ -1050,8 +1050,8 @@ app.get("/statistical", async (req, res) => {
         WHEN c.role_note = '0' THEN '0'
         WHEN c.role_note = '1' THEN 'CV'
         WHEN c.role_note = '2' THEN 'APP'
-        WHEN c.role_note = '3' THEN 'AD'
-        WHEN c.role_note = '4' THEN 'DD'
+        WHEN c.role_note = '3' THEN 'DD'
+        WHEN c.role_note = '4' THEN 'AD'
        ELSE '0'
        END AS caller, 
        t.team_name
