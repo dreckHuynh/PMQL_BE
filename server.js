@@ -806,7 +806,7 @@ app.get("/employees", extractUserId, async (req, res) => {
 
     if (!is_admin) {
       // Nếu không phải admin, chỉ lấy nhân viên cùng team_id
-      condition = `WHERE u.team_id = :team_id`;
+      condition = `WHERE team_id = :team_id`;
       replacements.team_id = team_id;
     }
 
@@ -815,7 +815,7 @@ app.get("/employees", extractUserId, async (req, res) => {
         SELECT u.*, 
                c.username AS created_by_username, 
                u2.username AS updated_by_username
-        FROM "User" u
+        FROM "User" AS u
         LEFT JOIN "User" c ON u.created_by = c.id
         LEFT JOIN "User" u2 ON u.updated_by = u2.id
         ${condition}
