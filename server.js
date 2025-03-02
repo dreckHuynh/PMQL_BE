@@ -816,7 +816,7 @@ app.get("/employees", extractUserId, async (req, res) => {
 
     const query = `
       WITH user_data AS (
-        SELECT u.id, u.name, u.username, u.team_id, u.status, 
+        SELECT u.id, u.name, u.username, u.team_id, u.status, u.is_team_lead
                c.username AS created_by_username, 
                u2.username AS updated_by_username
         FROM "User" AS u
