@@ -251,7 +251,7 @@ app.get("/customers", extractUserId, async (req, res) => {
     }
     let orderCondition = ``;
     if (order_by && order_type) {
-      orderCondition = ` , ${order_by} ${order_type}`;
+      orderCondition = `ORDER BY ${order_by} ${order_type}`;
     }
     let addFilter = ``;
     if (!isAdmin) {
@@ -281,7 +281,7 @@ app.get("/customers", extractUserId, async (req, res) => {
         WHERE 1=1 
         ${searchCondition}
         ${addFilter}
-        ORDER BY c.team_id ASC ${orderCondition}
+        ${orderCondition}
         LIMIT :limit OFFSET :offset
       )
       SELECT CAST((SELECT COUNT(*) FROM "Customer") AS INTEGER) AS total, 
