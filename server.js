@@ -280,7 +280,7 @@ app.get("/customers", extractUserId, async (req, res) => {
         WHERE 1=1 
         ${searchCondition}
         ${addFilter}
-        ${orderCondition}
+        ORDER BY c.created_at DESC
         LIMIT :limit OFFSET :offset
       )
       SELECT CAST((SELECT COUNT(*) FROM "Customer") AS INTEGER) AS total, 
