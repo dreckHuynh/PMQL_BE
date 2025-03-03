@@ -451,7 +451,6 @@ app.get("/customers/check", extractUserId, async (req, res) => {
         LEFT JOIN "User" u2 ON c.updated_by = u2.id
         LEFT JOIN "Team" t ON t.id = c.team_id
         WHERE 1=1
-        AND (c.status = '0' OR c.status = '2')
         ${joinTeam}
         ${searchCondition}
         ORDER BY c.created_at DESC
