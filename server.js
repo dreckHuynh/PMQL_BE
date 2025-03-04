@@ -456,8 +456,7 @@ app.get("/customers/check", extractUserId, async (req, res) => {
         LIMIT :limit OFFSET :offset
 )
 SELECT CAST((SELECT COUNT(*) 
-             FROM "Customer" c 
-             WHERE c.status = '2') AS INTEGER) AS total, 
+             FROM "Customer" c ) AS INTEGER) AS total, 
        json_agg(customer_data) AS customers
 FROM customer_data;
 
