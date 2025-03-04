@@ -283,7 +283,7 @@ app.get("/customers", extractUserId, async (req, res) => {
         ORDER BY c.created_at DESC
         LIMIT :limit OFFSET :offset
       )
-      SELECT CAST((SELECT COUNT(*) FROM "Customer") AS INTEGER) AS total, 
+      SELECT CAST((SELECT COUNT(*) FROM "Customer" WHERE 1=1 ${addFilter}) AS INTEGER) AS total, 
             json_agg(customer_data) AS customers 
       FROM customer_data;
       `,
